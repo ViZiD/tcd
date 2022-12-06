@@ -24,19 +24,36 @@ class App:
 
     def __parser_add_arguments(self) -> None:
         self.__parser.add_argument(
-            '--tdata', '-d', help='Path to Telegram Desktop cache folder', type=str, required=True, metavar='/path/to/tdata')
+            "--tdata",
+            "-d",
+            help="Path to Telegram Desktop cache folder",
+            type=str,
+            required=True,
+            metavar="/path/to/tdata",
+        )
         self.__parser.add_argument(
-            '--savedir', '-s', help='Path where decrypted cache will be saved', type=str, required=True, metavar='/path/to/save')
+            "--savedir",
+            "-s",
+            help="Path where decrypted cache will be saved",
+            type=str,
+            required=True,
+            metavar="/path/to/save",
+        )
         self.__parser.add_argument(
-            '--password', '-p', help='Passlock for Telegram Desktop', default='', type=str, metavar='passlock')
+            "--password",
+            "-p",
+            help="Passlock for Telegram Desktop",
+            default="",
+            type=str,
+            metavar="passlock",
+        )
 
     def __parse_arguments(self) -> None:
         self.__arguments = self.__parser.parse_args()
 
     def __check_arguments(self) -> None:
         if not (self.__arguments.tdata or self.__arguments.savedir):
-            raise MissingArgumentError(
-                'Missing arguments!\n')
+            raise MissingArgumentError("Missing arguments!\n")
 
     async def run(self) -> None:
         try:

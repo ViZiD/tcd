@@ -1,10 +1,13 @@
 import logging
 import os
+
 import aiofiles
 import aiofiles.os
 
-from .crypto import EncryptionKey, CacheDecryptor
+from .crypto import CacheDecryptor, EncryptionKey
 from .exceptions import DirNotExist, FileNotExist
+
+__version__ = "0.1dev"
 
 
 class TCD:
@@ -17,7 +20,7 @@ class TCD:
         self.__basepath = basepath
         self.__password = password
 
-        self.__key_path = os.path.join(self.__basepath, 'key_datas')
+        self.__key_path = os.path.join(self.__basepath, "key_datas")
 
         self.__check_basepath_exist()
         self.__check_keyfile_exist()
@@ -30,11 +33,11 @@ class TCD:
 
     def __check_basepath_exist(self) -> None:
         if not os.path.exists(self.__basepath):
-            raise DirNotExist(f'{self.__basepath} not exist!')
+            raise DirNotExist(f"{self.__basepath} not exist!")
 
     def __check_keyfile_exist(self) -> None:
         if not os.path.exists(self.__key_path):
-            raise FileNotExist(f'Key file not exist! {self.__key_path}')
+            raise FileNotExist(f"Key file not exist! {self.__key_path}")
 
     def __decrypt_key(self) -> None:
         """
@@ -42,7 +45,8 @@ class TCD:
         """
         salt, key = EncryptionKey.ReadKeyData(self.__key_path)
         localkey = EncryptionKey.CreateLocalKey(
-            bytes(self.__password, encoding='utf8'), salt)
+            bytes(self.__password, encoding="utf8"), salt
+        )
         key = EncryptionKey.DecryptLocal(key, localkey)
         self.__cache = CacheDecryptor(key)
 
@@ -55,7 +59,7 @@ class TCD:
         :rtype: bytes
         """
         if not await aiofiles.os.path.exists(file):
-            raise FileNotExist(f'Cache file not exist! {file}')
+            raise FileNotExist(f"Cache file not exist! {file}")
 
         decrypted = await self.__cache.Decrypt(file)
         return decrypted
@@ -70,7 +74,7 @@ class TCD:
         await aiofiles.os.makedirs(savepath, exist_ok=True)
 
         newfile = os.path.join(savepath, filename)
-        async with aiofiles.open(newfile, 'wb') as f:
+        async with aiofiles.open(newfile, "wb") as f:
             await f.write(data)
 
     async def decryptall(self, savepath: str) -> None:
@@ -78,19 +82,18 @@ class TCD:
         Main method for decrypting all user_data folder and save
         :param savepath: directory for saving cache
         """
-        user_data = os.path.join(self.__basepath, 'user_data')
+        user_data = os.path.join(self.__basepath, "user_data")
         if not os.path.exists(user_data):
-            raise DirNotExist(f'User data directory not exist! {user_data}')
+            raise DirNotExist(f"User data directory not exist! {user_data}")
 
         for root, _, files in os.walk(user_data):
             if files:
-                subdir = root[len(self.__basepath):].lstrip('/')
+                subdir = root[len(self.__basepath) :].lstrip("/")
                 newdir = os.path.join(savepath, subdir)
                 for name in files:
-                    if name in ['version', 'binlog']:
+                    if name in ["version", "binlog"]:
                         continue
                     cache_path = os.path.join(root, name)
                     data = await self.__getdecryptedfile(cache_path)
                     await self.__savefile(newdir, name, data)
-                    self.__logger.info(
-                        f'File {name} decrypted, save in {newdir}')
+                    self.__logger.info(f"File {name} decrypted, save in {newdir}")

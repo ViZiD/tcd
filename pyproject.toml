@@ -1,0 +1,51 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools", "wheel"]
+
+[project]
+authors = [
+  {email = "vizid1337@gmail.com"},
+  {name = "Radik Islamov"},
+]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.9",
+  "Environment :: Console",
+  "Operating System :: OS Independent",
+  "License :: OSI Approved :: MIT License",
+  "Topic :: Security",
+  "Topic :: Utilities",
+]
+dependencies = [
+  "aiofiles",
+  "PyQt5",
+  "tgcrypto",
+]
+description = "TCD is tool for decrypted Telegram Desktop media cache"
+dynamic = ["version", "readme"]
+keywords = ["decrypt", "crypto", "telegram", "tool"]
+license = {file = "LICENSE"}
+name = "tcd"
+requires-python = ">=3.9"
+
+[project.urls]
+homepage = "https://github.com/ViZiD/tcd"
+repository = "https://github.com/ViZiD/tcd"
+
+[project.scripts]
+tcd = "tcd.app.run:main"
+
+[tool.setuptools.dynamic]
+readme = {file = ["README.rst"]}
+version = {attr = "tcd.__version__"}
+
+[tool.setuptools.package-dir]
+tcd = "tcd"
+
+[tool.isort]
+profile = "black"
+
+[tool.ruff]
+ignore = ["E501", "D203", "D213", "ANN101"]
+select = ["E", "F", "W", "D", "C", "B", "A", "ANN", "RUF", "M", "I"]

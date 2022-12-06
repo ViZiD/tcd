@@ -1,11 +1,20 @@
-__all__ = ['KeyDataBadDecryptedSize', 'KeyDataBadChecksum',
-           'KeyFileInvalidMagic', 'CacheFileInvaildMagic', 'KeyFileInvalidChecksum', 'KeyFileNotFound', 'LocalKeyInvalidChecksum', 'DirNotExist', 'FileNotExist']
+__all__ = [
+    "KeyDataBadDecryptedSize",
+    "KeyDataBadChecksum",
+    "KeyFileInvalidMagic",
+    "CacheFileInvaildMagic",
+    "KeyFileInvalidChecksum",
+    "KeyFileNotFound",
+    "LocalKeyInvalidChecksum",
+    "DirNotExist",
+    "FileNotExist",
+]
 
 
 class KeyDataBadDecryptedSize(Exception):
     """
-   The decrypted data size part of the file is corrupted
-   """
+    The decrypted data size part of the file is corrupted
+    """
 
 
 class KeyDataBadChecksum(Exception):
@@ -29,7 +38,7 @@ class CacheFileInvaildMagic(Exception):
 
 class LocalKeyInvalidChecksum(Exception):
     """
-    Wrong key 
+    Wrong key
     """
 
 

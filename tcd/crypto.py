@@ -1,13 +1,21 @@
+import hashlib
 import os
 import typing
-import hashlib
 
-import tgcrypto
 import aiofiles
-from PyQt5.QtCore import QDataStream, QByteArray, QFile, QIODevice
+import tgcrypto
+from PyQt5.QtCore import QByteArray, QDataStream, QFile, QIODevice
 
-from .constants import TDF_MAGIC, TDEF_MAGIC
-from .exceptions import KeyDataBadDecryptedSize, KeyDataBadChecksum, KeyFileInvalidChecksum, KeyFileNotFound, KeyFileInvalidMagic, CacheFileInvaildMagic, LocalKeyInvalidChecksum
+from .constants import TDEF_MAGIC, TDF_MAGIC
+from .exceptions import (
+    CacheFileInvaildMagic,
+    KeyDataBadChecksum,
+    KeyDataBadDecryptedSize,
+    KeyFileInvalidChecksum,
+    KeyFileInvalidMagic,
+    KeyFileNotFound,
+    LocalKeyInvalidChecksum,
+)
 
 
 class EncryptionKey:
@@ -18,20 +26,16 @@ class EncryptionKey:
     @staticmethod
     def __mtp_kdf_v1(key, msgKey) -> typing.Tuple[bytes, bytes]:
         # https://core.telegram.org/mtproto/description_v1#defining-aes-key-and-initialization-vector
-        sha1_a = hashlib.sha1(msgKey[:16] + key[8:8 + 32]).digest()
+        sha1_a = hashlib.sha1(msgKey[:16] + key[8 : 8 + 32]).digest()
         sha1_b = hashlib.sha1(
-            key[8 + 32: 8 + 32 + 16]
-            + msgKey[:16]
-            + key[8 + 48: 8 + 48 + 16]).digest()
+            key[8 + 32 : 8 + 32 + 16] + msgKey[:16] + key[8 + 48 : 8 + 48 + 16]
+        ).digest()
 
-        sha1_c = hashlib.sha1(
-            key[8 + 64: 8 + 64 + 32] + msgKey[:16]).digest()
-        sha1_d = hashlib.sha1(
-            msgKey[:16] + key[8 + 96: 8 + 96 + 32]).digest()
+        sha1_c = hashlib.sha1(key[8 + 64 : 8 + 64 + 32] + msgKey[:16]).digest()
+        sha1_d = hashlib.sha1(msgKey[:16] + key[8 + 96 : 8 + 96 + 32]).digest()
 
-        aesKey = sha1_a[:8] + sha1_b[8: 8 + 12] + sha1_c[4: 4 + 12]
-        aesIv = sha1_a[8: 8 + 12] + sha1_b[:8] + \
-            sha1_c[16: 16 + 4] + sha1_d[:8]
+        aesKey = sha1_a[:8] + sha1_b[8 : 8 + 12] + sha1_c[4 : 4 + 12]
+        aesIv = sha1_a[8 : 8 + 12] + sha1_b[:8] + sha1_c[16 : 16 + 4] + sha1_d[:8]
 
         return aesKey, aesIv
 
@@ -45,18 +49,17 @@ class EncryptionKey:
     def DecryptLocal(encrypted: bytes, key: bytes) -> bytes:
         encryptedSize = len(encrypted)
         if (encryptedSize <= 16) or (encryptedSize & 0x0F):
-            raise KeyDataBadDecryptedSize(
-                f"Bad encrypted part size: {encryptedSize}")
+            raise KeyDataBadDecryptedSize(f"Bad encrypted part size: {encryptedSize}")
 
         encryptedKey = encrypted[:16]
-        decrypted = EncryptionKey.__aesDecryptLocal(
-            encrypted[16:], key, encryptedKey)
+        decrypted = EncryptionKey.__aesDecryptLocal(encrypted[16:], key, encryptedKey)
         checkHash = hashlib.sha1(decrypted).digest()[:16]
         if checkHash != encryptedKey:
             raise KeyDataBadChecksum(
-                "Bad decrypt key, key not decrypted, maybe incorrect password!")
+                "Bad decrypt key, key not decrypted, maybe incorrect password!"
+            )
 
-        dataLen = int.from_bytes(decrypted[:4], 'little')
+        dataLen = int.from_bytes(decrypted[:4], "little")
         return decrypted[4:dataLen]
 
     @staticmethod
@@ -66,8 +69,7 @@ class EncryptionKey:
         hashKey.update(salt)
 
         iterCount = 100000 if passcode else 1
-        localKey = hashlib.pbkdf2_hmac(
-            'sha512', hashKey.digest(), salt, iterCount, 256)
+        localKey = hashlib.pbkdf2_hmac("sha512", hashKey.digest(), salt, iterCount, 256)
 
         return localKey
 
@@ -81,8 +83,7 @@ class EncryptionKey:
         magic = file.read(4)
         if magic != TDF_MAGIC:
             file.close()
-            raise KeyFileInvalidMagic(
-                f"Invalid magic {magic} in file {filename}")
+            raise KeyFileInvalidMagic(f"Invalid magic {magic} in file {filename}")
 
         version = int.from_bytes(file.read(4), "little")
 
@@ -100,7 +101,8 @@ class EncryptionKey:
         if check_md5.hexdigest() != md5.hex():
             file.close()
             raise KeyFileInvalidChecksum(
-                f"Invalid checksum {check_md5.hexdigest()} in file {filename}")
+                f"Invalid checksum {check_md5.hexdigest()} in file {filename}"
+            )
 
         qstream = QDataStream(qdata)
 
@@ -120,31 +122,30 @@ class CacheDecryptor:
 
     async def Decrypt(self, filepath) -> bytes:
         filename = os.path.basename(filepath)
-        async with aiofiles.open(filepath, 'rb') as f:
+        async with aiofiles.open(filepath, "rb") as f:
             magic = await f.read(4)
             if magic != TDEF_MAGIC:
-                raise CacheFileInvaildMagic(
-                    f"Invalid magic {magic} in file {filename}")
+                raise CacheFileInvaildMagic(f"Invalid magic {magic} in file {filename}")
 
             salt = await f.read(64)
 
             real_key = hashlib.sha256(
-                self.__key[:len(self.__key)//2] + salt[:32]).digest()
+                self.__key[: len(self.__key) // 2] + salt[:32]
+            ).digest()
             iv = hashlib.sha256(
-                self.__key[len(self.__key)//2:] + salt[32:]).digest()[:16]
+                self.__key[len(self.__key) // 2 :] + salt[32:]
+            ).digest()[:16]
 
             # don't ask...
             encrypted = await f.read(16 + 32)
             decrypted = self.__ctr256_decrypt(encrypted, real_key, iv)
 
-            checksum = hashlib.sha256(
-                self.__key + salt + decrypted[:16]).digest()
+            checksum = hashlib.sha256(self.__key + salt + decrypted[:16]).digest()
 
             if checksum != decrypted[16:]:
-                raise LocalKeyInvalidChecksum('Wrong key!')
+                raise LocalKeyInvalidChecksum("Wrong key!")
 
             encrypted_data = await f.read()
-            decrypted_data = self.__ctr256_decrypt(
-                encrypted_data, real_key, iv)
+            decrypted_data = self.__ctr256_decrypt(encrypted_data, real_key, iv)
 
             return decrypted_data
