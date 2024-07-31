@@ -1,61 +1,83 @@
 {
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-  inputs.flake-utils.url = "github:numtide/flake-utils";
+  description = "NixOS flake for poetry project";
 
-  outputs = { self, nixpkgs, flake-utils, ... }:
-    flake-utils.lib.eachDefaultSystem (system:
+  inputs = {
+    nixpkgs.url = "nixpkgs/nixos-unstable";
+    poetry2nix.url = "github:nix-community/poetry2nix";
+    poetry2nix.inputs.nixpkgs.follows = "nixpkgs";
+    utils.url = "github:numtide/flake-utils";
+  };
+
+  outputs =
+    {
+      self,
+      nixpkgs,
+      poetry2nix,
+      utils,
+    }:
+    utils.lib.eachDefaultSystem (
+      system:
       let
-        pkgs = nixpkgs.legacyPackages.${system};
+        pkgs = import nixpkgs {
+          inherit system;
+          overlays = [ poetry2nix.overlays.default ];
+        };
+        p2n = import poetry2nix { inherit pkgs; };
 
-        python_packages = with pkgs; [
-          python39Packages.aiofiles
-          python39Packages.pyqt5
-          python39Packages.tgcrypto
-        ];
+        overrides = p2n.defaultPoetryOverrides.extend (
+          self: super: {
+            pyqt5-qt5 = super.pyqt5-qt5.overridePythonAttrs (old: {
+              buildInputs = old.buildInputs or [ ] ++ [ pkgs.libsForQt5.qt5.qtlottie ];
+              preFixup = ''
+                patchelf --replace-needed libtiff.so.5 libtiff.so $out/${self.python.sitePackages}/PyQt5/Qt5/plugins/imageformats/libqtiff.so
+              '';
+            });
+            pyqt5 = super.pyqt5.override { preferWheel = true; };
+            ruff = super.ruff.override { preferWheel = true; };
 
-        dev_packages = with pkgs; [
-          python39Packages.isort
-        ];
+          }
+        );
 
-        tcd = with pkgs.python39Packages;
-          buildPythonApplication rec {
-            pname = "tcd";
-            version = "0.1dev";
-            pyproject = true;
+        python = pkgs.python312;
 
-            src = ./.;
-
-            nativeBuildInputs = [
-              setuptools
-              wheel
-            ];
-
-            propagatedBuildInputs = python_packages;
-
-            doCheck = false;
-
-            meta = {
-              description = "Decrypt telegram media cache";
-              license = pkgs.lib.licenses.mit;
-            };
+        pythonEnv = p2n.mkPoetryEnv {
+          projectDir = self;
+          editablePackageSources = {
+            tcd = "tcd";
           };
+          python = python;
+          overrides = overrides;
+        };
+        pythonApp = p2n.mkPoetryApplication {
+          projectDir = self;
+          python = python;
+          overrides = overrides;
+          meta = with pkgs.lib; {
+            description = "tool for decrypted telegram desktop media cache";
+            homepage = "https://github.com/ViZiD/tcd";
+            license = licenses.mit;
+            maintainers = with maintainers; [ vizid ];
+          };
+        };
       in
-      {
-        packages.tcd = tcd;
-        packages.default = self.packages.${system}.tcd;
+      rec {
+        packages.default = pythonApp;
 
-        apps.tcd = {
+        defaultPackage = packages.default;
+
+        apps.default = {
           type = "app";
-          program = "${self.packages.${system}.tcd}/bin/tcd";
+          program = "${self.defaultPackage."${system}"}/bin/tcd";
         };
 
-        apps.default = self.apps.${system}.tcd;
-        defaultPackage = self.packages.${system}.tcd;
+        defaultApp = apps.default;
 
         devShells.default = pkgs.mkShell {
-          packages = with pkgs; [
-            python39
-          ] ++ python_packages ++ dev_packages;
+          buildInputs = [
+            pythonEnv
+            pkgs.poetry
+          ];
         };
-      });
+      }
+    );
 }

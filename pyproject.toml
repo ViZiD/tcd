@@ -1,9 +1,11 @@
 [build-system]
-build-backend = "setuptools.build_meta"
-requires = ["setuptools", "wheel"]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
 
-[project]
-authors = [{ email = "vizid1337@gmail.com" }, { name = "Radik Islamov" }]
+[tool.poetry]
+name = "tcd"
+version = "0.1dev"
+description = "TCD is tool for decrypted Telegram Desktop media cache"
 classifiers = [
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
@@ -14,31 +16,42 @@ classifiers = [
   "Topic :: Security",
   "Topic :: Utilities",
 ]
-dependencies = ["aiofiles", "PyQt5", "tgcrypto"]
-description = "TCD is tool for decrypted Telegram Desktop media cache"
-dynamic = ["version", "readme"]
 keywords = ["decrypt", "crypto", "telegram", "tool"]
-license = { file = "LICENSE" }
-name = "tcd"
-requires-python = ">=3.9"
+authors = ["Radik Islamov <vizid1337@gmail.com>"]
+license = "MIT"
+readme = "README.rst"
 
-[project.urls]
+[tool.poetry.scripts]
+tcd = "tcd.app.run:main"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+aiofiles = "^24.1.0"
+pyqt5 = "5.15.9"
+tgcrypto = "^1.2.5"
+
+[tool.poetry.urls]
 homepage = "https://github.com/ViZiD/tcd"
 repository = "https://github.com/ViZiD/tcd"
 
-[project.scripts]
-tcd = "tcd.app.run:main"
+[tool.poetry.group.dev.dependencies]
+ruff = "<=0.5.1"
+mypy = "^1.11.0"
+types-aiofiles = "^24.1.0.20240626"
 
-[tool.setuptools.dynamic]
-readme = { file = ["README.rst"] }
-version = { attr = "tcd.__version__" }
+[tool.ruff.format]
+indent-style = "space"
 
-[tool.setuptools.package-dir]
-tcd = "tcd"
+[tool.ruff.lint.isort]
+known-third-party = ["pyqt5", "aiofiles", "tgcrypto"]
 
-[tool.isort]
-profile = "black"
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
-[tool.ruff]
-ignore = ["E501", "D203", "D213", "ANN101"]
-select = ["E", "F", "W", "D", "C", "B", "A", "ANN", "RUF", "M", "I"]
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+check_untyped_defs = true
+ignore_missing_imports = true
+pretty = true
