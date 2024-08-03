@@ -232,6 +232,17 @@ files = [
 ]
 
 [[package]]
+name = "types-tgcrypto"
+version = "1.2.0.20240802"
+description = "Typing stubs for TgCrypto"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "types-TgCrypto-1.2.0.20240802.tar.gz", hash = "sha256:10112e813a40459721beddd54ddc04fab56d3e7b235701b3e5118463520273d6"},
+    {file = "types_TgCrypto-1.2.0.20240802-py3-none-any.whl", hash = "sha256:fa9285f555265881206a298e04cc22336ba364c7e1be92fc1d9bf94493e920a2"},
+]
+
+[[package]]
 name = "typing-extensions"
 version = "4.12.2"
 description = "Backported and Experimental Type Hints for Python 3.8+"
@@ -245,4 +256,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "8d74cd471a3dd3f7f9bc050b1bc44e8e75ce64cd2999516c8292afbea02c3101"
+content-hash = "c2bf0724d109cd272a52870a1f9c8f70c03cfd64f9a486e1986efe95ca2c89f7"
