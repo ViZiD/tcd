@@ -125,7 +125,9 @@ class CacheDecryptor:
         async with aiofiles.open(filepath, "rb") as f:
             magic = await f.read(4)
             if magic != TDEF_MAGIC:
-                raise CacheFileInvaildMagic(f"Invalid magic {magic} in file {filename}")
+                raise CacheFileInvaildMagic(
+                    f"Invalid magic {magic.decode('utf-8')} in file {filename}"
+                )
 
             salt = await f.read(64)
 
