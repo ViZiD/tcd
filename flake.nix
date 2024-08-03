@@ -26,6 +26,9 @@
 
         overrides = p2n.defaultPoetryOverrides.extend (
           self: super: {
+            types-tgcrypto = super.types-tgcrypto.overridePythonAttrs (old: {
+              buildInputs = old.buildInputs or [ ] ++ [ super.setuptools ];
+            });
             pyqt5-qt5 = super.pyqt5-qt5.overridePythonAttrs (old: {
               buildInputs = old.buildInputs or [ ] ++ [ pkgs.libsForQt5.qt5.qtlottie ];
               preFixup = ''
