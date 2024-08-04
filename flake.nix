@@ -80,6 +80,10 @@
             pythonEnv
             pkgs.poetry
           ];
+          shellHook = ''
+            git_root=$(${pkgs.git}/bin/git rev-parse --show-toplevel)
+            export PYTHONPATH=$git_root:$PYTHONPATH
+          '';
         };
       }
     );
